@@ -84,11 +84,25 @@ jobs:
           docker ps
 
       # --------------------------------------------------
-      # 3. Verify AWS identity
+      # 3. Configure AWS credentials
       # --------------------------------------------------
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       # --------------------------------------------------
-      # 4. Login to Amazon ECR
+      # 4. Verify AWS identity
+      # --------------------------------------------------
+      - name: Check AWS identity
+        run: |
+          echo "AWS identity:"
+          aws sts get-caller-identity
+
+      # --------------------------------------------------
+      # 5. Login to Amazon ECR
       # --------------------------------------------------
       - name: Login to ECR
         run: |
@@ -104,7 +118,7 @@ jobs:
           echo "ECR login successful."
 
       # --------------------------------------------------
-      # 5. Check ECR repository
+      # 6. Check ECR repository
       # --------------------------------------------------
       - name: Check ECR repository
         run: |
@@ -117,7 +131,7 @@ jobs:
           echo "ECR repository exists."
 
       # --------------------------------------------------
-      # 6. Build Docker image
+      # 7. Build Docker image
       # --------------------------------------------------
       - name: Build Docker image
         run: |
@@ -132,18 +146,20 @@ jobs:
           echo "Docker image built successfully."
 
       # --------------------------------------------------
-      # 7. Tag Docker image
+      # 8. Tag Docker image
       # --------------------------------------------------
       - name: Tag Docker image
         run: |
           ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
           echo "Tagging SHA image..."
+
           docker tag \
             "$ECR_REPOSITORY:${{ github.sha }}" \
             "$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}"
 
           echo "Tagging latest image..."
+
           docker tag \
             "$ECR_REPOSITORY:latest" \
             "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
@@ -151,24 +167,26 @@ jobs:
           echo "Images tagged successfully."
 
       # --------------------------------------------------
-      # 8. Push image to ECR
+      # 9. Push image to ECR
       # --------------------------------------------------
       - name: Push image to ECR
         run: |
           ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
           echo "Pushing SHA image..."
+
           docker push \
             "$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}"
 
           echo "Pushing latest image..."
+
           docker push \
             "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
 
           echo "Images pushed successfully."
 
       # --------------------------------------------------
-      # 9. Stop existing container
+      # 10. Stop existing container
       # --------------------------------------------------
       - name: Stop existing container
         run: |
@@ -177,12 +195,13 @@ jobs:
           docker stop "$CONTAINER_NAME" || true
 
           echo "Removing existing container if it exists..."
+
           docker rm "$CONTAINER_NAME" || true
 
           echo "Old container removed."
 
       # --------------------------------------------------
-      # 10. Pull exact image from ECR
+      # 11. Pull exact image from ECR
       # --------------------------------------------------
       - name: Pull new image
         run: |
@@ -197,7 +216,7 @@ jobs:
           echo "Image pulled successfully."
 
       # --------------------------------------------------
-      # 11. Start new container
+      # 12. Start new container
       # --------------------------------------------------
       - name: Start container
         run: |
@@ -214,7 +233,7 @@ jobs:
           echo "Container started."
 
       # --------------------------------------------------
-      # 12. Verify deployment
+      # 13. Verify deployment
       # --------------------------------------------------
       - name: Verify container
         run: |
@@ -250,7 +269,7 @@ jobs:
           echo "Container is running successfully."
 
       # --------------------------------------------------
-      # 13. Show deployment information
+      # 14. Deployment information
       # --------------------------------------------------
       - name: Deployment information
         run: |
@@ -270,4 +289,3 @@ jobs:
 
           docker ps \
             --filter "name=$CONTAINER_NAME"
-
