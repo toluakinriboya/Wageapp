@@ -86,10 +86,6 @@ jobs:
       # --------------------------------------------------
       # 3. Verify AWS identity
       # --------------------------------------------------
-      - name: Check AWS identity
-        run: |
-          echo "AWS identity:"
-          aws sts get-caller-identity
 
       # --------------------------------------------------
       # 4. Login to Amazon ECR
